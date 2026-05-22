@@ -7,19 +7,24 @@ import { X, Menu } from "lucide-react";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 80) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      const y = window.scrollY;
+      setScrolled(y > 80);
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(max > 0 ? (y / max) * 100 : 0);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, []);
 
   const navLinks = [
@@ -33,13 +38,9 @@ export default function Navbar() {
     <>
       {/* Scroll Progress Bar at very top */}
       <div className="fixed top-0 left-0 w-1 h-full bg-blue-100/10 z-[9999]">
-        <div 
+        <div
           className="w-full bg-brand-blue scroll-progress-bar"
-          style={{
-            height: typeof window !== "undefined" 
-              ? `${(window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100}%` 
-              : "0%"
-          }}
+          style={{ height: `${scrollProgress}%` }}
         />
       </div>
 
@@ -50,7 +51,7 @@ export default function Navbar() {
             : "bg-transparent py-6"
         }`}
       >
-        <div className="max-w-[95%] mx-auto px-6 flex justify-between items-center">
+        <div className="w-[90vw] mx-auto md:w-full md:max-w-[95%] md:px-6 flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="logo-link">
             <span

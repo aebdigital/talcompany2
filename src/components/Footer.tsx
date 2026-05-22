@@ -1,11 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { CookieSettingsLink } from "@/components/CookieSettingsLink";
 
 export default function Footer() {
   return (
     <footer id="footer" className="bg-[#1a1a1a] text-[#b3b3b3] py-16 mt-auto border-t border-white/5">
-      <div className="max-w-[95%] mx-auto px-6">
+      <div className="w-[90vw] mx-auto md:w-full md:max-w-[95%] md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-white/5">
           {/* Logo and About */}
           <div className="space-y-4">
@@ -50,8 +51,12 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-6 text-xs text-gray-500 uppercase tracking-widest font-semibold">
           <p>© {new Date().getFullYear()} TAL COMPANY s.r.o. Všetky práva vyhradené.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-white transition-colors">Ochrana osobných údajov</Link>
-            <Link href="#" className="hover:text-white transition-colors">Cookies</Link>
+            <Link href="/ochrana-osobnych-udajov" className="hover:text-white transition-colors">
+              Ochrana osobných údajov
+            </Link>
+            <CookieSettingsLink className="hover:text-white transition-colors cursor-pointer">
+              Cookies
+            </CookieSettingsLink>
           </div>
         </div>
       </div>

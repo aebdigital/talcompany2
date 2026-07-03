@@ -1,23 +1,19 @@
-// Netlify Function: /.netlify/functions/contact
-// Receives a JSON POST from the kontakt form and relays it via SMTP2GO.
-// Env vars required:
-//   CONTACT_FORM_RECIPIENT — where the email should land (e.g. tal@talcompany.sk)
-//   SMTP2GO_API_KEY        — SMTP2GO API key (api-XXXX...)
-//   SMTP2GO_SENDER         — verified "from" address on SMTP2GO (e.g. no-reply@talcompany.sk)
+import { NextResponse } from "next/server";
+
+export const runtime = "nodejs";
 
 const SMTP2GO_ENDPOINT = "https://api.smtp2go.com/v3/email/send";
 const MAX_FIELD_LENGTH = 5000;
 
 const JSON_HEADERS = {
-  "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
 };
 
-function jsonResponse(statusCode, payload) {
-  return { statusCode, headers: JSON_HEADERS, body: JSON.stringify(payload) };
+function jsonResponse(status: number, payload: Record<string, unknown>) {
+  return NextResponse.json(payload, { status, headers: JSON_HEADERS });
 }
 
-function escapeHtml(str) {
+function escapeHtml(str: string) {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -26,11 +22,21 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-function validate({ name, email, message }) {
-  const errors = [];
+function validate({
+  name,
+  email,
+  message,
+}: {
+  name: string;
+  email: string;
+  message: string;
+}) {
+  const errors: string[] = [];
   if (!name || name.trim().length < 2) errors.push("Meno je povinné.");
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Neplatná e-mailová adresa.");
-  if (!message || message.trim().length < 10) errors.push("Správa je príliš krátka.");
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    errors.push("Neplatná e-mailová adresa.");
+  if (!message || message.trim().length < 10)
+    errors.push("Správa je príliš krátka.");
   for (const [k, v] of Object.entries({ name, email, message })) {
     if (typeof v === "string" && v.length > MAX_FIELD_LENGTH) {
       errors.push(`Pole ${k} je príliš dlhé.`);
@@ -39,23 +45,21 @@ function validate({ name, email, message }) {
   return errors;
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: JSON_HEADERS, body: "" };
-  }
-  if (event.httpMethod !== "POST") {
-    return jsonResponse(405, { error: "Method not allowed" });
-  }
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: JSON_HEADERS });
+}
 
-  const { CONTACT_FORM_RECIPIENT, SMTP2GO_API_KEY, SMTP2GO_SENDER } = process.env;
+export async function POST(request: Request) {
+  const { CONTACT_FORM_RECIPIENT, SMTP2GO_API_KEY, SMTP2GO_SENDER } =
+    process.env;
   if (!CONTACT_FORM_RECIPIENT || !SMTP2GO_API_KEY || !SMTP2GO_SENDER) {
-    console.error("contact.js: missing required env vars");
+    console.error("contact route: missing required env vars");
     return jsonResponse(500, { error: "Server nie je nakonfigurovaný." });
   }
 
-  let payload;
+  let payload: Record<string, string>;
   try {
-    payload = JSON.parse(event.body || "{}");
+    payload = await request.json();
   } catch {
     return jsonResponse(400, { error: "Neplatný formát požiadavky." });
   }
@@ -108,23 +112,25 @@ exports.handler = async (event) => {
         subject,
         text_body: textBody,
         html_body: htmlBody,
-        // custom_headers — set Reply-To so you can reply straight to the sender
-        custom_headers: [
-          { header: "Reply-To", value: `${name} <${email}>` },
-        ],
+        custom_headers: [{ header: "Reply-To", value: `${name} <${email}>` }],
       }),
     });
 
     const data = await smtpRes.json().catch(() => ({}));
 
-    if (!smtpRes.ok || (data?.data?.error_code && data.data.error_code !== 0)) {
+    if (
+      !smtpRes.ok ||
+      (data?.data?.error_code && data.data.error_code !== 0)
+    ) {
       console.error("SMTP2GO error", smtpRes.status, data);
-      return jsonResponse(502, { error: "E-mailovú správu sa nepodarilo odoslať." });
+      return jsonResponse(502, {
+        error: "E-mailovú správu sa nepodarilo odoslať.",
+      });
     }
 
     return jsonResponse(200, { ok: true });
   } catch (err) {
-    console.error("contact.js exception", err);
+    console.error("contact route exception", err);
     return jsonResponse(500, { error: "Nastala neočakávaná chyba." });
   }
-};
+}

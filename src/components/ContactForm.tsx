@@ -7,7 +7,7 @@ type FormState = { name: string; email: string; phone: string; message: string }
 type Status = "idle" | "submitting" | "success" | "error";
 
 const INITIAL: FormState = { name: "", email: "", phone: "", message: "" };
-const ENDPOINT = "/.netlify/functions/contact";
+const ENDPOINT = "/api/contact";
 
 export function ContactForm() {
   const [data, setData] = useState<FormState>(INITIAL);

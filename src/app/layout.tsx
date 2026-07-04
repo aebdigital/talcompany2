@@ -1,3 +1,4 @@
+import JsonLd from "../components/JsonLd";
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import Navbar from "@/components/Navbar";
@@ -142,6 +143,7 @@ export default function RootLayout({
   return (
     <html lang="sk" className={`${montserrat.variable} h-full scroll-smooth`}>
       <body className="min-h-full flex flex-col font-sans antialiased bg-white text-brand-dark-gray">
+        <JsonLd />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSON_LD) }}

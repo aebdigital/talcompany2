@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { PROJECTS } from "./src/lib/projects";
 
 const nextConfig: NextConfig = {
+  images: { unoptimized: true },
   // All site images live in /public/sources/. No external image hosts in use.
   async redirects() {
     return PROJECTS.flatMap((project) => [
